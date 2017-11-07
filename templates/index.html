@@ -13,8 +13,8 @@
     
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css"/>
 
-    <!--<link rel="stylesheet" type="text/css" href="../static/lib/css/main.css">   -->
-    <link rel="stylesheet" type="text/css" href="/static/lib/css/main.css">   
+    <link rel="stylesheet" type="text/css" href="../static/lib/css/main.css">   
+    <!--<link rel="stylesheet" type="text/css" href="/static/lib/css/main.css">   -->
     
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
@@ -128,11 +128,11 @@
 
 queue()
     
-    // .defer(d3.json, "../json_files/bob_dylan_songs.json")
-    // .defer(d3.json, "../json_files/top_30_songs.json")
+    .defer(d3.json, "../json_files/bob_dylan_songs.json")
+    .defer(d3.json, "../json_files/top_30_songs.json")
     
-    .defer(d3.json, "bob_dylan_songs")
-    .defer(d3.json, "top_30_songs")
+    // .defer(d3.json, "bob_dylan_songs")
+    // .defer(d3.json, "top_30_songs")
     
     .await(makeGraphs);
 
@@ -193,33 +193,64 @@ function bob_dylan_graphs(bob_dylan_songs) {
 
 // song value is the longevity of the song: last_date - first_date played. 
 // album value = average of song values within the album
-
-    // var album_dim = ndx.dimension( function(d){ if (d.num_plays > 0) {return d.album;};});
+    
+    function get_days(d){
+        if(d.num_plays > 0) {
+            var timeDiff = Math.abs(d.last_date - d.first_date)
+            var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            d.total = 1;
+            d.album_total = Math.max(daysDiff, 1) ;
+            } else {
+                d.album_total = 0
+            };
+        return d.album_total
+    }
+    
+    var album_dim = ndx.dimension( function(d){ if (d.num_plays > 0) {return d.album;};});
+    
     // var count_album_value = album_dim.group().reduceSum(function(d){
     //     if(d.num_plays > 0) {
     //         var timeDiff = Math.abs(d.last_date - d.first_date)
     //         var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    //         d.album_total = Math.max(daysDiff, 1);
+    //         d.total = 1;
+    //         d.album_total = Math.max(daysDiff, 1) ;
     //         } else {
     //             d.album_total = 0
     //         };
     //     return d.album_total
     //     });  
+
+    var album_average = album_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
+    function reduceAvgAdd(p, v) {
+      ++p.count;
+      p.total += parseInt(get_days(v));
+      return p;
+    }
     
-    // dc.scatterChart("#chart4")
-    //     .width(900)
-    //     .height(500)
-    //     .margins({top: 30, right: 50, bottom: 40, left: 40})
-    //     .dimension(album_year_dim)
-    //     .group(count_numplays_date)
-    //     .transitionDuration(500)
-    //     .x(d3.scale.ordinal())
-    //     .xUnits(dc.units.ordinal)
-    //     .elasticX(true)
-    //     .xAxisLabel("")
-    //     .yAxisLabel("")
-    //     .yAxis().ticks(20)
+    function reduceAvgRemove(p, v) {
+      --p.count;
+      p.total -= parseInt(get_days(v));
+      return p;
+    }
+    
+    function reduceAvgInit() {
+      return {count: 0, total: 0};
+    }
+
+    console.log(album_average.all())    
         
+    dc.barChart("#chart4")
+        .width(600)
+        .height(500)
+        .margins({top: 30, right: 50, bottom: 40, left: 40})
+        .dimension(album_dim)
+        .group(album_average)
+        .valueAccessor(function(p) { 
+            return p.value.count > 0 ? p.value.total / p.value.count : 0; })
+        .x(d3.scale.linear())
+        .transitionDuration(500)
+
+
 
 // -----------------------------------------------------------------------------
 
