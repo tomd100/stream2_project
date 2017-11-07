@@ -25,6 +25,9 @@
 <body>
 <!--*************************************************************************-->
 
+<!--reset button:-->
+<!--<a href="javascript:dc.filterAll(); dc.renderAll();">Reset All</a>-->
+
 <section>
     <div class="container md-col-12">
         <div class="row" style="padding: 40px">
@@ -194,63 +197,56 @@ function bob_dylan_graphs(bob_dylan_songs) {
 // song value is the longevity of the song: last_date - first_date played. 
 // album value = average of song values within the album
     
-    function get_days(d){
-        if(d.num_plays > 0) {
-            var timeDiff = Math.abs(d.last_date - d.first_date)
-            var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            d.total = 1;
-            d.album_total = Math.max(daysDiff, 1) ;
-            } else {
-                d.album_total = 0
-            };
-        return d.album_total
-    }
+    var year_average_dim = ndx.dimension( function(d){ if (d.num_plays > 0 && d.album != "") {return d.album_year;};});
+    var year_average_sum = year_average_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
     
-    var album_dim = ndx.dimension( function(d){ if (d.num_plays > 0) {return d.album;};});
-    
-    // var count_album_value = album_dim.group().reduceSum(function(d){
-    //     if(d.num_plays > 0) {
-    //         var timeDiff = Math.abs(d.last_date - d.first_date)
-    //         var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    //         d.total = 1;
-    //         d.album_total = Math.max(daysDiff, 1) ;
-    //         } else {
-    //             d.album_total = 0
-    //         };
-    //     return d.album_total
-    //     });  
-
-    var album_average = album_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
     function reduceAvgAdd(p, v) {
-      ++p.count;
-      p.total += parseInt(get_days(v));
-      return p;
+        if(v.num_plays > 0) {
+            ++p.count;
+            p.total += parseInt(get_days(v));
+        }
+        return p;
     }
     
     function reduceAvgRemove(p, v) {
-      --p.count;
-      p.total -= parseInt(get_days(v));
-      return p;
+        if(v.num_plays > 0) {
+            --p.count;
+            p.total -= parseInt(get_days(v));
+        }
+        return p;
     }
     
     function reduceAvgInit() {
-      return {count: 0, total: 0};
+            return {count: 0, total: 0};
     }
 
-    console.log(album_average.all())    
+    function get_days(d){
+        var album_total = 0;
+        if(d.num_plays > 0) {
+            var timeDiff = Math.abs(d.last_date - d.first_date)
+            var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24 * 365));
+            album_total = Math.max(daysDiff, 1) ;
+            } else {
+                album_total = 0
+            };
+        return album_total
+    }
+    
+    console.log(year_average_sum.all())    
         
     dc.barChart("#chart4")
-        .width(600)
+        .width(1200)
         .height(500)
-        .margins({top: 30, right: 50, bottom: 40, left: 40})
-        .dimension(album_dim)
-        .group(album_average)
+        .margins({top: 30, right: 50, bottom: 140, left: 40})
+        .dimension(year_average_dim)
+        .group(year_average_sum)
+        .transitionDuration(500)
         .valueAccessor(function(p) { 
             return p.value.count > 0 ? p.value.total / p.value.count : 0; })
-        .x(d3.scale.linear())
-        .transitionDuration(500)
-
-
+        .x(d3.scale.ordinal())
+        .xUnits(dc.units.ordinal)
+        .yAxis().ticks(4)
+        
 
 // -----------------------------------------------------------------------------
 
