@@ -13,8 +13,8 @@
     
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css"/>
 
-    <link rel="stylesheet" type="text/css" href="../static/lib/css/main.css">   
-    <!--<link rel="stylesheet" type="text/css" href="/static/lib/css/main.css">   -->
+    <!--<link rel="stylesheet" type="text/css" href="../static/lib/css/main.css">   -->
+    <link rel="stylesheet" type="text/css" href="/static/lib/css/main.css">   
     
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
@@ -149,11 +149,11 @@
 
 queue()
     
-    .defer(d3.json, "../json_files/bob_dylan_songs.json")
-    .defer(d3.json, "../json_files/top_30_songs.json")
+    // .defer(d3.json, "../json_files/bob_dylan_songs.json")
+    // .defer(d3.json, "../json_files/top_30_songs.json")
     
-    // .defer(d3.json, "bob_dylan_songs")
-    // .defer(d3.json, "top_30_songs")
+    .defer(d3.json, "bob_dylan_songs")
+    .defer(d3.json, "top_30_songs")
     
     .await(makeGraphs);
 
@@ -218,13 +218,13 @@ function bob_dylan_graphs(bob_dylan_songs) {
     var year_average_dim = ndx.dimension( function(d){ if (d.num_plays > 0 && d.album != "") {return d.album_year;}});
     var year_average_sum = year_average_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
 
-    var album_average_dim = ndx.dimension( function(d){ if (d.num_plays > 0 && d.album != "") {return d.album;}});
-    var album_average_sum = album_average_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
-    
+    // var album_average_dim = ndx.dimension( function(d){ if (d.num_plays > 0 && d.album != "") {return d.album;}});
+    // var album_average_sum = album_average_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
+
     function reduceAvgAdd(p, v) {
         if(v.num_plays > 0) {
             ++p.count;
-            p.total += parseInt(get_days(v));
+            p.total += (v.num_plays / parseInt(get_days(v)));
         }
         return p;
     }
@@ -232,7 +232,7 @@ function bob_dylan_graphs(bob_dylan_songs) {
     function reduceAvgRemove(p, v) {
         if(v.num_plays > 0) {
             --p.count;
-            p.total -= parseInt(get_days(v));
+            p.total -= (v.num_plays / parseInt(get_days(v)));
         }
         return p;
     }
@@ -254,8 +254,7 @@ function bob_dylan_graphs(bob_dylan_songs) {
     }
     
     console.log(year_average_sum.all());    
-    console.log(album_average_sum.all());   
-    
+  
     dc.barChart("#chart4")
         .width(1200)
         .height(500)
@@ -268,7 +267,12 @@ function bob_dylan_graphs(bob_dylan_songs) {
         .x(d3.scale.ordinal())
         .xUnits(dc.units.ordinal)
         .yAxis().ticks(4)
-        
+
+    var album_pie_dim = ndx.dimension( function(d){ if (d.num_plays > 0 && d.album != "") {return d.album + ":" + d.album_year;}});
+    var album_numplays_sum = album_pie_dim.group().reduceSum(function(d) {return d.num_plays;});
+  
+    console.log(album_numplays_sum.all()); 
+      
     dc.pieChart("#chart5")
         .width(768)
         .height(480)
@@ -276,14 +280,14 @@ function bob_dylan_graphs(bob_dylan_songs) {
         .othersGrouper(false)
         .innerRadius(100)
         .externalRadiusPadding(50)
-        .externalLabels(50)
-        .minAngleForLabel(1)
+        .externalLabels(30)
+        .minAngleForLabel(0.3)
         .drawPaths(true)
-        .dimension(album_average_dim)
-        .group(album_average_sum)
+        .dimension(album_pie_dim)
+        .group(album_numplays_sum)
         .ordering( function(d) { return -1.0 * d.value; }) // appears to work
-        .valueAccessor(function(p) { 
-            return p.value.count > 0 ? p.value.total / p.value.count : 0; })
+        // .valueAccessor(function(p) { 
+            // return p.value.count > 0 ? p.value.total / p.value.count : 0; })
         .legend(dc.legend())
  
 
