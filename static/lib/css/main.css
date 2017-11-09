@@ -33,3 +33,8 @@ h1{
   transform: rotate(-45deg);
 }
 
+#chart4b .x.axis text {
+  text-anchor: end !important;
+  transform: rotate(-45deg);
+}
+
