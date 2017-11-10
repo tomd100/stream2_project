@@ -110,22 +110,6 @@
 </section>
 
 <!--*************************************************************************-->
-
-<section>
-    <div class="container-fluid">
-        
-        <div class="col-lg-12">
-            
-            <div class="col-lg-offset-2 col-lg-12" style="padding: 20px">
-                <h6>Graph Title</h6>
-                <div id="chart4b"></div>
-            </div>
-            
-        </div>
-
-    </div>
-</section>
-<!--*************************************************************************-->
 <section>
     <div class="container-fluid">
         
@@ -174,9 +158,9 @@ queue()
     .await(makeGraphs);
 
 function makeGraphs(error, bob_dylan_songs, top_30_songs, stripped_songs) {
-    // all_songs_grapphs(bob_dylan_songs);
+    all_songs_grapphs(bob_dylan_songs);
     // all_albums_graphs(bob_dylan_songs);
-    // top_30_graphs(top_30_songs);
+    top_30_graphs(top_30_songs);
     all_albums_graphs(stripped_songs);
 }
 
@@ -243,28 +227,23 @@ function all_albums_graphs(data) {
 // song value is the longevity of the song: last_date - first_date played. 
 // album value = average of song values within the album
     
-    // var year_average_dim = ndx.dimension( function(d){ if (parseInt(d.num_plays) > 0 && d.album != "") {return d.song_title;}});    
-    // var year_average_sum = year_average_dim.group().reduceSum(function(d) {return d.num_plays});
-
-    // var year_average_dim = ndx.dimension( function(d){ if (parseInt(d.num_plays) > 0 && d.album != "") {return parseInt(d.album_year);}});
     var year_average_dim = ndx.dimension( function(d){ 
         var album_year_int = parseInt(d.album_year); 
         if (album_year_int < 1970){
             return "1960's";
         } else if (album_year_int < 1980) {
-            return "1970s";
+            return "1970's";
         } else if (album_year_int < 1990) {
-            return "1980s";
+            return "1980's";
         } else if (album_year_int < 2000) {
-            return "1990s";
+            return "1990's";
         } else if (album_year_int < 2010) {
-            return "2000s";
+            return "2000's";
         } else return "2010s"
     });
     
-    
     var year_average_sum = year_average_dim.group().reduce(reduceAvgAdd, reduceAvgRemove, reduceAvgInit);
-
+    
     function reduceAvgAdd(p, v) {
         ++p.count;
         p.total += get_adj(v);
@@ -316,7 +295,6 @@ function all_albums_graphs(data) {
     console.log(year_average_sum.all());    
   
     dc.barChart("#chart4")
-        .ordinalColors(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
         .width(900)
         .height(700)
         .margins({top: 30, right: 50, bottom: 140, left: 40})
@@ -328,43 +306,9 @@ function all_albums_graphs(data) {
         .x(d3.scale.ordinal())
         .xUnits(dc.units.ordinal)
         .yAxis().ticks(4)
-
-    var year_tmp_dim = ndx.dimension( function(d){ return parseInt(d.album_year); });
-    var year_tmp_sum = year_tmp_dim.group().reduce(reduceTmpAdd, reduceTmpRemove, reduceTmpInit);
-    function reduceTmpAdd(p, v) {
-        ++p.count;
-        p.total += parseInt(v.num_plays);
-        return p;
-    }
+        
+    // -----------------------------------------------------------------------------
     
-    function reduceTmpRemove(p, v) {
-        --p.count;
-        p.total -= parseInt(v.num_plays);
-        return p;
-    }
-    
-    function reduceTmpInit() {
-            return {count: 0, total: 0};
-    }
-    
-
-    dc.barChart("#chart4b")
-        .width(900)
-        .height(700)
-        .margins({top: 30, right: 50, bottom: 140, left: 40})
-        .dimension(year_tmp_dim)
-        .group(year_tmp_sum)
-        .transitionDuration(500)
-        .valueAccessor(function(p) { 
-            return p.value.count > 0 ? p.value.total / p.value.count : 0; })
-        .x(d3.scale.ordinal())
-        .xUnits(dc.units.ordinal)
-        .yAxis().ticks(4)
-
-    // var album_pie_dim = ndx.dimension( function(d){ if (parseInt(d.num_plays) > 0 && d.album != "") {return d.song_title;}});
-    // var album_numplays_sum = album_pie_dim.group().reduceSum(function(d) {return d.num_plays});
-
-    // var album_pie_dim = ndx.dimension( function(d){ if (parseInt(d.num_plays) > 0 && d.album != "") {return parseInt(d.album_year);}});
     var album_pie_dim = ndx.dimension( function(d) {return d.album});
     var album_numplays_sum = album_pie_dim.group().reduce(reducePlaysAdd, reducePlaysRemove, reducePlaysInit);
     
@@ -428,7 +372,7 @@ function top_30_graphs(data) {
         .order(d3.descending);
         
                 
-// -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     
     var song_chart_dim = ndx.dimension(function(d) {return d.song_title});
     var song_chart_pos = song_chart_dim.group().reduceSum(function(d) {return d.num_plays});

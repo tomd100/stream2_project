@@ -28,13 +28,13 @@ h1{
   transform: rotate(-45deg);
 }
 
+#chart4 rect {
+    fill: #ad3e40;
+}
+
 #chart4 .x.axis text {
   text-anchor: end !important;
   transform: rotate(-45deg);
 }
 
-#chart4b .x.axis text {
-  text-anchor: end !important;
-  transform: rotate(-45deg);
-}
 
